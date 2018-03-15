@@ -1,9 +1,4 @@
-import * as bcrypt from 'bcrypt';
-import mongoose from 'mongoose';
-import Users from './user.schema';
-import logger from '../../helpers/logger.helper';
-import { formatQuery, isValidEmail } from '../../helpers/request.helper';
-import { createForgotPassword, verifyForgotPasswordToken } from './forgotPassword/forgotPassword.service';
+const db = require('../../db');
 
 /**
  * @api {GET} /users/ Get all users
@@ -16,17 +11,10 @@ import { createForgotPassword, verifyForgotPasswordToken } from './forgotPasswor
  * @apiSuccess {Object[]} Users List of User.
  */
 export function getUsers(req, res) {
-  const { filter, limit, offset } = formatQuery(Users, req.query, 100);
-
-  // Get all user
-  Users.find(filter, (err, users) => {
-    if (err) {
-      logger.error(err);
-      return res.status(500).send({ success: false, err });
-    }
-    res.status(200).send({ success: true, data: users });
-  }).limit(limit)
-    .skip(offset);
+  db.query('SELECT * FROM users', (err, result) => {
+    if (err) throw err;
+    return res.status(200).send({ data: result });
+  });
 }
 
 /**
@@ -40,18 +28,7 @@ export function getUsers(req, res) {
  * @apiSuccess {String} profile.email User email.
  */
 export function getUserById(req, res) {
-  // We test if we have objectID for the user
-  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-    logger.debug('Le format de l\'id n\'est pas correct');
-    return res.status(400).send({ success: false, err: "Le format de l'id n'est pas correct" });
-  }
-  Users.find({ _id: req.params.id }, (err, user) => {
-    if (err) {
-      logger.error(err);
-      return res.status(500).send({ success: false, err });
-    }
-    return res.status(200).send({ success: true, data: user });
-  });
+  return res.status(500).send({ auth: false });
 }
 
 /**
@@ -64,13 +41,7 @@ export function getUserById(req, res) {
  * @apiSuccess {String} profile.email User email.
  */
 export function getMe(req, res) {
-  Users.findOne({ _id: req.userId }, (err, user) => {
-    if (err) {
-      logger.error(err);
-      return res.status(500).send({ success: false, err });
-    }
-    return res.status(200).send({ success: true, data: user });
-  });
+  return res.status(500).send({ auth: false });
 }
 
 /**
@@ -92,14 +63,7 @@ export function getMe(req, res) {
  * @apiSuccess {Object} response.user the user create.
  */
 export function createUser(req, res) {
-  const user = new Users(req.body);
-  user.save((err, userCreate) => {
-    if (err) {
-      logger.error(err);
-      return res.status(500).send({ success: false, err });
-    }
-    return res.status(200).send({ success: true, user: userCreate });
-  });
+  return res.status(500).send({ auth: false });
 }
 
 /**
@@ -111,17 +75,7 @@ export function createUser(req, res) {
  * @apiSuccess {Boolean} response.success true.
  */
 export function deleteUser(req, res) {
-  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-    logger.debug('Le format de l\'id n\'est pas correct');
-    return res.status(400).send({ success: false, err: "Le format de l'id n'est pas correct" });
-  }
-  Users.remove({ _id: req.params.id }, (err) => {
-    if (err) {
-      logger.error(err);
-      return res.status(500).send({ success: false, err });
-    }
-    return res.status(200).send({ success: true });
-  });
+  return res.status(500).send({ auth: false });
 }
 
 /**
@@ -142,17 +96,7 @@ export function deleteUser(req, res) {
  * @apiSuccess {Object} response.user the user update.
  */
 export function updateUser(req, res) {
-  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-    logger.debug('Le format de l\'id n\'est pas correct');
-    return res.status(400).send({ success: false, err: "Le format de l'id n'est pas correct" });
-  }
-  Users.findOneAndUpdate({ _id: req.params.id }, req.body, { upsert: true }, (err, user) => {
-    if (err) {
-      logger.error(err);
-      return res.status(500).send({ success: false, err });
-    }
-    return res.status(200).send({ success: true, user });
-  });
+  return res.status(500).send({ auth: false });
 }
 
 /**
@@ -165,35 +109,7 @@ export function updateUser(req, res) {
  * @apiSuccess {Object} response.user new password generated.
  */
 export function forgotPassword(req, res) {
-  if (req.body.constructor === Object && Object.keys(req.body).length === 0) {
-    return res.status(500).send({ success: false, err: 'Pas de paramètre dans la requête' });
-  }
-  if (!req.body.email) {
-    return res.status(500).send({ success: false, err: 'Aucun email précisé' });
-  }
-
-  // Test if mail is valid
-  if (!isValidEmail(req.body.email)) {
-    // Add error to logger
-    const errMsg = 'Le format de l\'email n\'est pas correct';
-    logger.debug(errMsg);
-    return res.status(500).send({ success: false, err: errMsg });
-  }
-
-  // Search if user exists width this mail
-  Users.findOne({ email: req.body.email }, (err, user) => {
-    // // If user not found
-    if (!user) {
-      const errMsg = 'User not found';
-      logger.debug(errMsg);
-      return res.status(500).send({ success: false, err: errMsg });
-    }
-
-    return createForgotPassword(user._id, req.body.email)
-      .then(forgotPasswordCreated => res.status(200)
-        .send({ success: true, token: process.env.NODE_ENV === 'test' ? forgotPasswordCreated.token : null }))
-      .catch(error => res.status(500).send({ success: false, err: error.message }));
-  });
+  return res.status(500).send({ auth: false });
 }
 
 /**
@@ -208,46 +124,7 @@ export function forgotPassword(req, res) {
  * @apiSuccess {Object} response.user the user update.
  */
 export function resetPassword(req, res) {
-  if (req.body.constructor === Object && Object.keys(req.body).length === 0) {
-    return res.status(500).send({ auth: false, token: null, err: 'Pas de paramètre dans la requête' });
-  }
-  if (!req.body.email) {
-    return res.status(500).send({ success: false, err: 'Aucun email précisé' });
-  }
-  if (!req.body.token) {
-    return res.status(500).send({ success: false, err: 'Aucun token précisé' });
-  }
-  if (!req.body.password) {
-    return res.status(500).send({ success: false, err: 'Aucun password précisé' });
-  }
-  if (!isValidEmail(req.body.email)) { // Test if mail is valid
-    logger.debug('Le format de l\'email n\'est pas correct'); // Add error to logger
-    throw new Error('Le mail n\'est pas valide');
-  }
-  // Search if user exists width this mail
-  Users.findOne({ email: req.body.email }, (err, userTarget) => {
-    // If user not found
-    if (!userTarget) {
-      const errMsg = 'User not found.';
-      logger.debug(errMsg);
-      return res.status(500).send({ success: false, err: errMsg });
-    }
-    verifyForgotPasswordToken(userTarget._id, req.body.token)
-      .then(() => {
-        // If all is ok : Verify Password
-        if (req.body.password.length < 8) { // So easy password
-          throw new Error('Password so easy, try to find an harder password please.');
-        }
-
-        // We can now do the change And apply this to the :database
-        const hashedPassword = bcrypt.hashSync(req.body.password, 8);
-        Users.findOneAndUpdate({ _id: userTarget._id }, {
-          password: hashedPassword,
-        }, { upsert: true })
-          .then(() => res.status(200).send({ success: true }));
-      })
-      .catch(error => res.status(500).send({ success: false, err: error.message }));
-  });
+  return res.status(500).send({ auth: false });
 }
 
 /**
@@ -260,29 +137,5 @@ export function resetPassword(req, res) {
  * @apiSuccess {Boolean} response.success true.
  */
 export function validateResetPassword(req, res) {
-  if (req.body.constructor === Object && Object.keys(req.body).length === 0) {
-    return res.status(500).send({ auth: false, token: null, err: 'Pas de paramètre dans la requête' });
-  }
-  if (!req.body.email) {
-    return res.status(500).send({ success: false, err: 'Aucun email précisé' });
-  }
-  if (!req.body.token) {
-    return res.status(500).send({ success: false, err: 'Aucun token précisé' });
-  }
-  if (!isValidEmail(req.body.email)) { // Test if mail is valid
-    logger.debug('Le format de l\'email n\'est pas correct'); // Add error to logger
-    throw new Error('Le mail n\'est pas valide');
-  }
-  // Search if user exists width this mail
-  Users.findOne({ email: req.body.email }, (err, user) => {
-    // If user not found
-    if (!user) {
-      logger.debug('User not found.');
-      throw new Error('User not found.');
-    }
-
-    verifyForgotPasswordToken(user._id, req.body.token)
-      .then(() => res.status(200).send({ success: true }))
-      .catch(error => res.status(500).send({ success: false, err: error.message }));
-  });
+  return res.status(500).send({ auth: false });
 }

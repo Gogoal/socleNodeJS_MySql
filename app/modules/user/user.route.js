@@ -2,7 +2,6 @@ import express from 'express';
 import {
   getUsers,
   getUserById,
-  getEventsByUserId,
   createUser,
   deleteUser,
   updateUser,
@@ -28,12 +27,12 @@ router.route('/verifyResetPassword')
   .post(validateResetPassword);
 
 // For other webservice, we need a token so we use on the road
-if (process.env.NODE_ENV !== 'test') router.use(verifyToken);
+// if (process.env.NODE_ENV !== 'test') router.use(verifyToken);
 
 // .get Get all Users with filter option
 // .post Create a new user
 router.route('/')
-  .get(isAdmin, getUsers)
+  .get(getUsers)
   .post(isAdmin, createUser);
 
 // .get Get information user by token
@@ -47,9 +46,5 @@ router.route('/:id')
   .get(isAdmin, getUserById)
   .delete(isAdmin, deleteUser)
   .put(isAdmin, updateUser);
-
-// .get Get all user event
-router.route('/:id/events')
-  .get(isAdmin, getEventsByUserId);
 
 export default router;

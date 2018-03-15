@@ -2,6 +2,7 @@ import express from 'express';
 import path from 'path';
 import bodyParser from 'body-parser';
 import authRoutes from './modules/user/auth/auth.route';
+import userRoutes from './modules/user/user.route';
 
 const app = express();
 
@@ -47,5 +48,8 @@ app.use('/', express.static('apidoc'));
 // ALL USED ROUTED
 // Permit to use the auth route
 app.use('/auth', authRoutes);
+
+// Permit to use the auth route
+app.use('/users', userRoutes);
 
 export default app;

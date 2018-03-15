@@ -1,7 +1,7 @@
-# SOCLE NODE.JS ET MONGODB - REST API
+# SOCLE NODE.JS ET MYSQL - REST API
 ## Technologies
 * NodeJS
-* Mongoose
+* MySql
 * Express
 * Babel (Transpile to es6)
 
@@ -16,7 +16,6 @@
 ## Informations
 #### Integration serveur :
 
-#### BDD Mongodb :
-https://mlab.com/home
-* Lancer la commande :
-* mongo ds117935.mlab.com:17935/wesport -u <dbuser> -p <dbpassword>
+#### BDD MySQL :
+* Create connection mysql
+* Modify db.js for the connection to the database
